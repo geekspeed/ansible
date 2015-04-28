@@ -1,0 +1,96 @@
+---
+
+- name: Deploying people's backend DATA server
+  hosts: data
+  sudo: True
+  vars:
+    pipeline_phase: "integ"
+    component: "data"
+    sumologic_logs: "{{ sumologic_logs_defaults_backend_redis }}"
+    people_api_datadog_event_deployment_priority: "low"
+    datadog_process_checks:
+      - "{{ datadog_process_checks_global_defaults }}"
+    datadog_event_deployment_priority: "normal"
+
+  tasks:
+    - include_vars: group_vars/main.yml
+
+    - name: create required directories
+      file: >
+        state=directory
+        path={{ item }}
+        owner={{ jive_user }}
+        group={{ jive_group }}
+        mode=0755
+      with_items:
+          - "{{ backend_service_home }}"
+          - "{{ notifications_service_home }}"
+          - "{{ identity_sync_service_home }}"
+          - "{{ configuration_service_home }}"
+
+    - name: copy upstart init scripts
+      template: >
+        src=templates/upstart-init.conf.j2
+        dest=/etc/init/{{ item.artifact_id }}.conf
+        owner=root
+        group=root
+        mode=755
+      with_items:
+        - { artifact_id: "{{ configuration_service_artifact_id }}",
+            home: "{{ configuration_service_home }}",
+            artifact: "{{ configuration_service_artifact }}",
+            port: "{{ configuration_service_manage_port }}",
+            startup_timeout: "{{ configuration_service_startup_timeout }}" }
+        - { artifact_id: "{{ backend_service_artifact_id }}",
+            home: "{{ backend_service_home }}",
+            artifact: "{{ backend_service_artifact }}",
+            port: "{{ backend_service_manage_port }}",
+            startup_timeout: "{{ backend_service_startup_timeout }}" }
+        - { artifact_id: "{{ notifications_service_artifact_id }}",
+            home: "{{ notifications_service_home }}",
+            artifact: "{{ notifications_service_artifact }}",
+            port: "{{ notifications_service_manage_port }}",
+            startup_timeout: "{{ notifications_service_startup_timeout }}" }
+        - { artifact_id: "{{ identity_sync_service_artifact_id }}",
+            home: "{{ identity_sync_service_home }}",
+            artifact: "{{ identity_sync_service_artifact }}",
+            port: "{{ identity_sync_service_manage_port }}",
+            startup_timeout: "{{ identity_sync_service_startup_timeout }}" }
+
+
+    - name: fetch configuration-service from nexus
+      get_url: >
+        url={{ configuration_service_artifact_url }}
+        dest={{ global_jive_incoming_folder }}/{{ configuration_service_artifact_name }}
+        mode=0755
+
+    - name: fetch backend-service from nexus
+      get_url: >
+        url={{ backend_service_artifact_url }}
+        dest={{ global_jive_incoming_folder }}/{{ backend_service_artifact_name}}
+        mode=0755
+
+    - name: fetch notifications-service from nexus
+      get_url: >
+        url={{ notifications_service_artifact_url }}
+        dest={{ global_jive_incoming_folder }}/{{ notifications_service_artifact_name}}
+        mode=0755
+
+    - name: fetch identity-sync-service from nexus
+      get_url: >
+        url={{ identity_sync_service_artifact_url }}
+        dest={{ global_jive_incoming_folder }}/{{ identity_sync_service_artifact_name }}
+        mode=0755
+
+    - name: deploy configuration-service
+      command: mv {{ global_jive_incoming_folder }}/{{configuration_service_artifact_name}} {{ configuration_service_artifact }}
+
+    - name: deploy backend
+      command: mv {{ global_jive_incoming_folder }}/{{ backend_service_artifact_name }} {{ backend_service_artifact }}
+
+    - name: deploy notifications
+      command: mv {{ global_jive_incoming_folder }}/{{ notifications_service_artifact_name }} {{ notifications_service_artifact }}
+
+    - name: deploy identity
+      command: mv {{ global_jive_incoming_folder }}/{{ identity_sync_service_artifact_name }} {{ identity_sync_service_artifact }}
+

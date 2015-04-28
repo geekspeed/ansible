@@ -1,0 +1,322 @@
+---
+#####
+# Intended use:
+#  - setting jive specific defaults for third-party (galaxy) roles
+#  - associating third-party sensitive variables to vaulted_global_* variables to ease finding them
+#####
+
+# used by sumologic 
+sumologic_collector_accesskey: "{{ vaulted_global_sumologic_collector_accesskey }}"
+
+# used by datadog
+datadog_api_key: "{{ vaulted_global_datadog_api_key }}"
+
+# used by franklinkim.nginx
+nginx_remove_default: yes
+
+# used by kunik.s3cmd
+s3cmd_key: "AKIAJ5E4IEQBBXVFR2UQ"
+s3cmd:
+  key: "{{ s3cmd_key }}"
+  secret: "{{ vaulted_global_s3cmd_secret }}"
+
+# used by smola.java
+java_packages:
+  - oracle-java8-installer
+
+# used by Stouts.redis and DavidWittman.redis
+redis_appendonly: "yes"
+redis_bind: "0.0.0.0"
+
+# used by thumbor
+thumbor_aws_secret_key: "{{ vaulted_thumbor_aws_secret_key }}"
+
+# used by identity for franklinkim.nginx
+identity_nginx_sites:
+  - id: identity
+    add_webroot: no
+    directives:
+      body_size: '8m'
+    name: identity.local
+    port: 8090
+    proxy_pass:
+      location: '/'
+      target: "http://127.0.0.1:8080"
+      connect_timeout: '1s'
+      send_timeout: '5s'
+      read_timeout: '130s'
+      set_headers:
+        Host: '$http_host'
+        X-Server-Name: '$server_name'
+        X-Real-IP: '$remote_addr'
+        X-Forwarded-For: '$proxy_add_x_forwarded_for'
+
+# global jive task and folder variables
+global_jive_group: "jive"
+global_jive_user: "jive"
+global_jive_folder: "/usr/local/jive"
+global_jive_servers_folder: "/usr/local/jive/servers"
+global_jive_incoming_folder: "/usr/local/jive/incoming"
+global_jive_incoming_cleanup_days: "7"
+global_jive_archive_folder: "/usr/local/jive/archive"
+global_jive_bin_folder: "/usr/local/jive/bin"
+global_jive_log_folder: "/var/log/jive"
+
+# used by all aws artifact tasks that have credentials specified
+global_jive_aws_region: "us-west-2"
+
+# Nexus related information
+#nexus_download_directory: "/tmp"
+#nexus_base_url: "http://nexus-int.eng.jiveland.com/content/repositories/jiveforward"
+#nexus_deployable_group_id: "com/jivesoftware/service/deployable"
+
+# global jive task and folder variables
+jive_group: "jive"
+jive_user: "jive"
+jive_parent_folder: "/usr/local"
+jive_folder: "/usr/local/jive"
+jive_servers_folder: "/usr/local/jive/servers"
+jive_incoming_folder: "/usr/local/jive/incoming"
+jive_incoming_cleanup_days: "7"
+jive_archive_folder: "/usr/local/jive/archive"
+jive_bin_folder: "/usr/local/jive/bin"
+jive_log_folder: "/var/log/jive"
+
+# used by all aws artifact tasks that have credentials specified
+jive_aws_region: "us-west-2"
+
+# people API rolling vars
+people_api_nexus_base_url: 'http://nexus-int.eng.jiveland.com/content/repositories'
+people_api_nexus_reposistory: 'jiveforward'
+people_api_nexus_group_id: 'com/jivesoftware/people'
+
+people_api_application_core_service_artifact_id: 'application-core'
+people_api_application_core_service_startup_timeout: '60'
+people_api_application_core_service_manage_port: '8090'
+people_api_application_core_service_home: '/usr/local/jive/servers/application-core'
+people_api_application_core_service_artifact: '/usr/local/jive/servers/application-core/application-core.jar'
+
+people_api_db_global_serviceappcore: serviceappcore
+#people_api_backend_global_db_url: jdbc:mysql://backendglobal-{{ pipeline_phase }}.cfgicpmjktvu.us-west-2.rds.amazonaws.com:3306/backendGlobal{{ pipeline_phase }}
+people_api_global_db_url: jdbc:mysql://globaldb.people.{{ pipeline_phase }}.jiveprivate.com:3306/peopleGlobal{{ pipeline_phase }}
+
+people_api_artifact_name: 'application-core-1.0-{{version}}.jar'
+people_api_artifact_url: "{{ people_api_nexus_base_url }}/{{ people_api_nexus_reposistory }}/{{ people_api_nexus_group_id }}/{{ people_api_application_core_service_artifact_id }}/1.0-{{ version }}/{{ people_api_artifact_name }}"
+
+people_api_datadog_event_deployment_priority: "low"
+
+people_api_default_support_mail: 'mailto:workstyleappsupport@jivesoftware.com'
+
+people_api_redis_host: redis.people.{{ pipeline_phase }}.jiveprivate.com
+
+# people API rolling
+people_api_appcore_artifact_id: 'application-core'
+people_api_appcore_manage_port: '8090'
+
+people_api_elb_appcore: "{{ pipeline_phase }}-people-appcore"
+
+# people DATA parallel
+people_data_nexus_partial_url: 'http://nexus-int.eng.jiveland.com/content/repositories'
+people_data_nexus_reposistory: 'jiveforward'
+people_data_nexus_group_id: 'com/jivesoftware/people/'
+people_data_nexus_base_url: '{{ people_data_nexus_partial_url }}/{{ people_data_nexus_reposistory }}/{{ people_data_nexus_group_id }}'
+
+people_data_datadog_event_deployment_priority: "low"
+
+people_data_backend_service_artifact_id: 'backend-service'
+people_data_backend_service_startup_timeout: '60'
+people_data_backend_service_manage_port: '8093'
+people_data_backend_service_artifact_name: 'backend-service-1.0-{{ version }}.jar'
+people_data_backend_service_artifact_url: '{{ people_data_nexus_base_url }}/{{ people_data_backend_service_artifact_id }}/1.0-{{ version }}/{{ people_data_backend_service_artifact_name }}'
+people_data_backend_service_home: '/usr/local/jive/servers/backend-service'
+people_data_backend_service_artifact: '/usr/local/jive/servers/backend-service/backend-service.jar'
+
+people_data_identity_sync_service_artifact_id: 'identity-sync-service'
+people_data_identity_sync_service_startup_timeout: '60'
+people_data_identity_sync_service_manage_port: '8091'
+people_data_identity_sync_service_artifact_name: 'identity-sync-service-1.0-{{ version }}.jar'
+people_data_identity_sync_service_artifact_url: '{{ people_data_nexus_base_url }}/{{ people_data_identity_sync_service_artifact_id }}/1.0-{{ version }}/{{ people_data_identity_sync_service_artifact_name }}'
+people_data_identity_sync_service_home: '/usr/local/jive/servers/identity-sync-service'
+people_data_identity_sync_service_artifact: '/usr/local/jive/servers/identity-sync-service/identity-sync-service.jar'
+
+people_data_configuration_service_artifact_id: 'configuration-service'
+people_data_configuration_service_startup_timeout: '60'
+people_data_configuration_service_manage_port: '8092'
+people_data_configuration_service_artifact_name: 'configuration-service-1.0-{{ version }}.jar'
+people_data_configuration_service_artifact_url: '{{ people_data_nexus_base_url }}/{{ people_data_configuration_service_artifact_id }}/1.0-{{ version }}/{{ people_data_configuration_service_artifact_name }}'
+people_data_configuration_service_home: '/usr/local/jive/servers/configuration-service'
+people_data_configuration_service_artifact: '/usr/local/jive/servers/configuration-service/configuration-service.jar'
+
+people_data_redis_host: redis.people.{{ pipeline_phase }}.jiveprivate.com
+
+# config_service variables
+people_data_identity_host: "https://id.{{ pipeline_phase }}.jivehourly.com"
+people_data_identsync_queue: "{{ pipeline_phase }}_clientApp_1"
+#people_data_images_cdn_path: "https://thumbor.{{ pipeline_phase }}.jivehourly.com/images/"
+#people_data_ios_cert_isprod: "False"
+## default is dev cert
+#people_data_ios_cert: "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"
+#people_data_email_verify_webapp: "https://account.{{ pipeline_phase }}.jivehourly.com"
+#people_data_email_digest_webapp: "https://daily.{{ pipeline_phase }}.jivehourly.com"
+#people_data_email_digest_sender: "Jive Daily <daily@mail.jivedaily.com>"
+#people_data_email_digest_api: "https://api.{{ pipeline_phase }}.jivehourly.com/api"
+#people_data_email_gun_domain: "mail.jivedaily.com"
+#people_data_email_gun_host: "https://api.mailgun.net"
+#people_data_email_send: "true"
+#people_data_android_gcm_retries: 3
+people_data_aws_access_key_id: "AKIAJIVW2MV3ZJYRZMWA"
+people_data_identity_sync_aws_access_key_id: "AKIAJZZCCQLFEH2QLXUA"
+#people_data_drafts_lock_interval_seconds: 6000
+#people_data_email_sales_recipient: "daily.sales.tests@gmail.com"
+#people_data_invite_ios_link: "https://itunes.apple.com/app/jive-daily/id954858248"
+#people_data_kaltura_url: "http://www.kaltura.com"
+#people_data_kaltura_user: "daily.user@jivesoftware.com"
+#people_data_include_temporary_endpoints: "false"
+#people_data_default_support_mail: 'mailto:workstyleappsupport@jivesoftware.com'
+#people_data_allow_migrations: "false"
+
+# People data rolling
+people_data_backend_service_artifact_id: 'backend-service'
+people_data_backend_service_manage_port: '8093'
+
+people_data_identity_sync_service_artifact_id: 'identity-sync-service'
+people_data_identity_sync_service_manage_port: '8091'
+
+people_data_configuration_service_artifact_id: 'configuration-service'
+people_data_configuration_service_manage_port: '8092'
+
+people_data_elb_idsync: "{{ pipeline_phase }}-people-idsync"
+
+# DB Pass
+vaulted_backend_db_global_master_password: "UqIfqSwxQxV2BIeiaVJXQrIzcuXUDVLW61IM"
+vaulted_backend_db_global_serviceappcore_password: "M9SHw7T1TOyu8aeuoPsCWtK74Um7inqlZKa2"
+vaulted_backend_db_global_serviceidsync_password: "5Lq3FvNcWHuTKZQduXgx7m4JlM1sFO2bX16W"
+vaulted_backend_db_global_servicenotif_password: "UM8CB6dhLkohI56JYDjpE4KQpq25hEMr8hUo"
+vaulted_backend_db_global_servicebackend_password: "GsoOnxN9zKn5RHsotJutGSm9GoMUEQGojOXJ"
+vaulted_backend_db_global_serviceconfig_password: "raYernAc9y351MtXewvgvtNLBBKnvmDq0x3e"
+vaulted_backend_db_global_jiveadmin_password: "GVLWT0EO4OzZhhB6IqJqOZ9SUzoapIgWoa9q"
+vaulted_backend_db_global_jivedeveloper_password: "ishallDONOHARM"
+vaulted_backend_db_data_master_password: "K6nU6xCV6f5odlxnjItJW308ZRGCo8KkAs3q"
+vaulted_backend_db_data_serviceshared_password: "niud3PDUN9SemRJsBLuhmXqklaLp5gvlah46"
+vaulted_backend_db_data_jivedeveloper_password: "ishallDONOHARM"
+vaulted_backend_db_data_jiveadmin_password: "8eAzhPR7Bfo2sScUm7OoLcsmFkeytmII1K9W"
+
+# API DB pass
+vaulted_people_api_db_global_serviceappcore_password: "M9SHw7T1TOyu8aeuoPsCWtK74Um7inqlZKa2"
+
+# DATA DB pass
+vaulted_people_db_data_serviceshared_password: "niud3PDUN9SemRJsBLuhmXqklaLp5gvlah46"
+vaulted_people_db_data_jivedeveloper_password: "ishallDONOHARM"
+vaulted_people_db_data_master_password: "K6nU6xCV6f5odlxnjItJW308ZRGCo8KkAs3q"
+vaulted_people_db_data_jiveadmin_password: "8eAzhPR7Bfo2sScUm7OoLcsmFkeytmII1K9W"
+vaulted_people_db_global_serviceappcore_password: "M9SHw7T1TOyu8aeuoPsCWtK74Um7inqlZKa2"
+vaulted_people_db_global_master_password: "K6nU6xCV6f5odlxnjItJW308ZRGCo8KkAs3q"
+vaulted_people_db_global_serviceidsync_password: "5Lq3FvNcWHuTKZQduXgx7m4JlM1sFO2bX16W"
+vaulted_people_db_global_servicebackend_password: "GsoOnxN9zKn5RHsotJutGSm9GoMUEQGojOXJ"
+vaulted_people_db_global_serviceconfig_password: "raYernAc9y351MtXewvgvtNLBBKnvmDq0x3e"
+vaulted_people_db_global_jiveadmin_password: "8eAzhPR7Bfo2sScUm7OoLcsmFkeytmII1K9W"
+vaulted_people_db_global_jivedeveloper_password: "ishallDONOHARM"
+
+
+# people backend_DB
+
+people_db_liquibase_version: "3.2.2"
+people_db_liquibase_artifact: "liquibase-{{ people_db_liquibase_version }}-bin.tar.gz"
+people_db_liquibase_url: "http://sourceforge.net/projects/liquibase/files/Liquibase%20Core/{{ people_db_liquibase_artifact }}/download"
+people_db_liquibase_download_path: "/usr/local/jive/incoming"
+people_db_liquibase_home: "/usr/local/jive/liquibase"
+people_db_liquibase_lib: "/usr/local/jive/liquibase/lib"
+people_db_liquibase_executable: "{{ people_db_liquibase_home }}/liquibase"
+
+people_db_liquibase_mysql_connector_version: "5.1.32"
+people_db_liquibase_mysql_connector_artifact: "mysql-connector-java-{{ people_db_liquibase_mysql_connector_version }}.tar.gz"
+people_db_liquibase_mysql_connector_jar: "mysql-connector-java-{{ people_db_liquibase_mysql_connector_version }}-bin.jar"
+people_db_liquibase_mysql_connector_url: "http://dev.mysql.com/get/Downloads/Connector-J/{{ people_db_liquibase_mysql_connector_artifact }}"
+people_db_liquibase_mysql_connector_home: "{{ people_db_liquibase_lib }}/mysql-connector-java-{{ people_db_liquibase_mysql_connector_version }}"
+
+people_db_liquibase_people_changelog_partial_url: 'http://nexus-int.eng.jiveland.com/content/repositories/jiveforward/com/jivesoftware/people'
+people_db_liquibase_people_changelog_id: 'liquibase'
+people_db_liquibase_people_changelog_name: 'liquibase-1.0-{{version}}.tar.gz'
+people_db_liquibase_people_changelog_url: "{{ people_db_liquibase_people_changelog_partial_url }}/{{ people_db_liquibase_people_changelog_id }}/1.0-{{ version }}/{{ people_db_liquibase_people_changelog_name }}"
+
+people_db_global_name: "peopleGlobal{{ pipeline_phase }}"
+#people_db_global_endpoint: "peopleglobal-{{ pipeline_phase }}.cfgicpmjktvu.us-west-2.rds.amazonaws.com"
+people_db_global_endpoint: "globaldb.people.{{ pipeline_phase }}.jiveprivate.com"
+people_db_global_url: "jdbc:mysql://{{ people_db_global_endpoint }}/{{ people_db_global_name }}"
+people_db_global_master_user: "mysql_admin"
+people_db_global_properties_file: "{{ people_db_liquibase_home }}/liquibase_global.properties"
+people_db_global_changelog_file: "{{ people_db_liquibase_home }}/global_db_liquibase.xml"
+people_db_common_global_changelog_file: "{{ people_db_liquibase_home }}/common_global_db_liquibase.xml"
+
+people_db_data_name: "peopleData{{ pipeline_phase }}"
+#people_db_data_endpoint: "peopledata-{{ pipeline_phase }}.cfgicpmjktvu.us-west-2.rds.amazonaws.com"
+people_db_data_endpoint: "datadb.people.{{ pipeline_phase }}.jiveprivate.com"
+people_db_data_url: "jdbc:mysql://{{ people_db_data_endpoint }}/{{ people_db_data_name }}"
+people_db_data_master_user: "mysql_admin"
+people_db_data_properties_file: "{{ people_db_liquibase_home }}/liquibase_data.properties"
+people_db_data_changelog_file: "{{ people_db_liquibase_home }}/data_db_liquibase.xml"
+people_db_common_data_changelog_file: "{{ people_db_liquibase_home }}/common_data_db_liquibase.xml"
+
+# DB Global Users
+people_db_global_serviceconfig: "serviceconfig"
+people_db_global_servicebackend: "servicepeople"
+people_db_global_serviceidsync: "serviceidsync"
+people_db_global_serviceappcore: "serviceappcore"
+people_db_global_jivedeveloper: "jivedeveloper"
+people_db_global_jiveadmin: "jiveadmin"
+
+# DB Data Users
+people_db_data_jiveadmin: "jiveadmin"
+people_db_data_jivedeveloper: "jivedeveloper"
+people_db_data_serviceshared: "serviceshared"
+
+# For liquibase setup
+liquibase_version: "3.2.2"
+liquibase_artifact: "liquibase-{{ liquibase_version }}-bin.tar.gz"
+liquibase_url: "http://sourceforge.net/projects/liquibase/files/Liquibase%20Core/{{ liquibase_artifact }}/download"
+liquibase_download_path: "/usr/local/jive/incoming"
+liquibase_home: "/usr/local/jive/liquibase"
+liquibase_lib: "/usr/local/jive/liquibase/lib"
+liquibase_executable: "{{ liquibase_home }}/liquibase"
+
+liquibase_mysql_connector_version: "5.1.32"
+liquibase_mysql_connector_artifact: "mysql-connector-java-{{ liquibase_mysql_connector_version }}.tar.gz"
+liquibase_mysql_connector_jar: "mysql-connector-java-{{ liquibase_mysql_connector_version }}-bin.jar"
+liquibase_mysql_connector_url: "http://dev.mysql.com/get/Downloads/Connector-J/{{ liquibase_mysql_connector_artifact }}"
+liquibase_mysql_connector_home: "{{ liquibase_lib }}/mysql-connector-java-{{ liquibase_mysql_connector_version }}"
+
+liquibase_backend_changelog_partial_url: 'http://nexus-int.eng.jiveland.com/content/repositories/jiveforward/com/jivesoftware/jenesis'
+liquibase_backend_changelog_id: 'liquibase'
+liquibase_backend_changelog_name: 'liquibase-1.0-{{version}}.tar.gz'
+liquibase_backend_changelog_url: "{{ liquibase_backend_changelog_partial_url }}/{{ liquibase_backend_changelog_id }}/1.0-{{ version }}/{{ liquibase_backend_changelog_name }}"
+
+backend_db_global_name: "backendGlobal{{ pipeline_phase }}"
+backend_db_global_endpoint: "backendglobal-{{ pipeline_phase }}.cfgicpmjktvu.us-west-2.rds.amazonaws.com"
+backend_db_global_url: "jdbc:mysql://{{ backend_db_global_endpoint }}/{{ backend_db_global_name }}"
+backend_db_global_master_user: "mysql_admin"
+backend_db_global_properties_file: "{{ liquibase_home }}/liquibase_global.properties"
+backend_db_global_changelog_file: "{{ liquibase_home }}/global_db_liquibase.xml"
+backend_db_common_global_changelog_file: "{{ liquibase_home }}/common_global_db_liquibase.xml"
+
+backend_db_data_name: "backendData{{ pipeline_phase }}"
+backend_db_data_endpoint: "backenddata-{{ pipeline_phase }}.cfgicpmjktvu.us-west-2.rds.amazonaws.com"
+backend_db_data_url: "jdbc:mysql://{{ backend_db_data_endpoint }}/{{ backend_db_data_name }}"
+backend_db_data_master_user: "mysql_admin"
+backend_db_data_properties_file: "{{ liquibase_home }}/liquibase_data.properties"
+backend_db_data_changelog_file: "{{ liquibase_home }}/data_db_liquibase.xml"
+backend_db_common_data_changelog_file: "{{ liquibase_home }}/common_data_db_liquibase.xml"
+
+# DB Global Users
+backend_db_global_serviceconfig: "serviceconfig"
+backend_db_global_servicebackend: "servicebackend"
+backend_db_global_servicenotif: "servicenotif"
+backend_db_global_serviceidsync: "serviceidsync"
+backend_db_global_serviceappcore: "serviceappcore"
+backend_db_global_jivedeveloper: "jivedeveloper"
+backend_db_global_jiveadmin: "jiveadmin"
+
+# DB Data Users
+backend_db_data_jiveadmin: "jiveadmin"
+backend_db_data_jivedeveloper: "jivedeveloper"
+backend_db_data_serviceshared: "serviceshared"
+

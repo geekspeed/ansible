@@ -1,0 +1,10 @@
+# {{ ansible_managed }}
+
+127.0.0.1 localhost
+
+{{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }} {{ hostvars[inventory_hostname]["ansible_fqdn"] }} {{ hostvars[inventory_hostname]["ansible_hostname"] }}
+
+
+# for access back to internal hosts
+10.10.100.155 nexus-int.eng.jiveland.com nexus-int.eng nexus-int
+10.81.2.251 ad.corp.jiveland.com ad.corp ad

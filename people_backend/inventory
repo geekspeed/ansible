@@ -1,0 +1,11 @@
+[api]
+people_api2 ansible_ssh=ip-10-112-207-242.us-west-2.compute.internal
+
+[data]
+people_data2 ansible_ssh=ip-10-112-207-172.us-west-2.compute.internal
+
+[redis]
+people_redis2 ansible_ssh=ip-10-112-166-72.us-west-2.compute.internal
+
+[mysql]
+

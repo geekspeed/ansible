@@ -1,0 +1,6 @@
+driver: com.mysql.jdbc.Driver
+classpath: {{ liquibase_mysql_connector_home }}/{{ liquibase_mysql_connector_jar }}
+username: {{ backend_db_global_master_user }}
+password: {{ vaulted_backend_db_global_master_password }}
+url: {{ backend_db_global_url }}
+

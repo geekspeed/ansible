@@ -1,0 +1,53 @@
+- name: Deploying backend DATA server
+  hosts: api
+  sudo: True
+  vars:
+    pipeline_phase: "integ"
+    component: "data"
+    sumologic_logs: "{{ sumologic_logs_defaults_backend_redis }}"
+    people_api_datadog_event_deployment_priority: "low"
+    datadog_process_checks:
+      - "{{ datadog_process_checks_global_defaults }}"
+    datadog_event_deployment_priority: "normal"
+
+  tasks:
+    - include_vars: group_vars/main.yml
+
+    - name: fetch liquibase backend changelogs artifact from nexus
+      get_url: >
+        url={{ liquibase_backend_changelog_url }}
+        dest={{ global_jive_incoming_folder }}/{{ liquibase_backend_changelog_name }}
+        mode=0750
+
+    - name: copy and unpack liquibase backend changelogs
+      unarchive: >
+        src={{ global_jive_incoming_folder }}/{{ liquibase_backend_changelog_name }}
+        dest={{ liquibase_home }}
+        copy=no
+        mode=0750
+        owner=root
+        group=root
+
+    - name: update backend_global database - common
+      command: "{{ liquibase_executable }} --defaultsFile={{ backend_db_global_properties_file }} --changeLogFile={{ backend_db_common_global_changelog_file }} update"
+      run_once: true
+
+    - name: update backend_global database
+      command: "{{ liquibase_executable }} --defaultsFile={{ backend_db_global_properties_file }} --changeLogFile={{ backend_db_global_changelog_file }} update"
+      run_once: true
+
+    - name: update backend_data database - common
+      command: "{{ liquibase_executable }} --defaultsFile={{ backend_db_data_properties_file }} --changeLogFile={{ backend_db_common_data_changelog_file }} update"
+      run_once: true
+
+    - name: update backend_data database
+      command: "{{ liquibase_executable }} --defaultsFile={{ backend_db_data_properties_file }} --changeLogFile={{ backend_db_data_changelog_file }} update"
+      run_once: true
+
+    - name: copy global properties file
+      template: >
+        src=templates/config.properties.j2
+        dest={{ application_core_service_home }}/config.properties
+        owner={{ global_jive_user }}
+        group={{ global_jive_group }}
+        mode=0640

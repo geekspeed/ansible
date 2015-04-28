@@ -1,0 +1,43 @@
+---
+- name: create liquibase directory
+  file: >
+    state=directory
+    path={{ liquibase_home }}
+    owner=root
+    group=root
+    mode=0750
+
+- name: fetch liquibase
+  get_url: >
+    url={{ liquibase_url }}
+    dest={{ liquibase_download_path }}/{{ liquibase_artifact }}
+    mode=0750
+
+- name: copy and unpack liquibase
+  unarchive: >
+    src={{ liquibase_download_path }}/{{ liquibase_artifact }}
+    dest={{ liquibase_home }}
+    copy=no
+    creates={{ liquibase_home }}/liquibase.jar
+
+- name: fetch mysql connector
+  get_url: >
+    url={{ liquibase_mysql_connector_url }}
+    dest={{ liquibase_download_path }}/{{ liquibase_mysql_connector_artifact }}
+    mode=0755
+    owner=root
+    group=root
+
+- name: copy and unpack mysql connector
+  unarchive: >
+    src={{ liquibase_download_path }}/{{ liquibase_mysql_connector_artifact }}
+    dest={{ liquibase_lib }}
+    copy=no
+    creates={{ liquibase_mysql_connector_home }}/{{ liquibase_mysql_connector_jar }}
+
+- name: make liquibase executable
+  file: >
+    path={{ liquibase_executable }}
+    mode=0755
+    owner=root
+    group=root

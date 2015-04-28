@@ -1,0 +1,38 @@
+#!/bin/sh
+# vim: set ts=8 sw=4 sts=4 et ai tw=71:
+
+upstart_spawn_and_stop() {
+    name=$1
+    pid=$2
+
+    pkill -xf 'sleep 11' && echo "killed old sleep process"
+    echo $((pid-2)) |
+        sudo tee /proc/sys/kernel/ns_last_pid >/dev/null &&
+        sh -c 'sleep 11 &'
+    sleeppid=`pgrep -xf 'sleep 11'`
+    if test "$sleeppid" != "$pid"; then
+            echo "looks like we did not get the right pid.."
+            return 1
+    fi
+    parentpid=`ps -o%P -p$pid | sed -e1d`
+    if test "$parentpid" -eq 1; then
+            echo "very well.. we've got a live pid"
+    else
+            echo "looks like it got the wrong parent.. started from X?"
+            return 1
+    fi
+    return 0
+}
+
+pkill -xf 'sleep 11' && echo "killed old sleep process"
+initctl list | tac | while read line; do
+    procpid=`echo $line | awk '{print $4}'`
+    if ! test -d /proc/$procpid; then
+        procname=`echo $line | awk '{print $1}'`
+        echo "$procname:"
+        if upstart_spawn_and_stop $procname $procpid; then
+            initctl status $name
+            initctl stop $name # "Terminated"?
+        fi
+    fi
+done

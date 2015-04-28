@@ -1,0 +1,54 @@
+---
+- name: Deploying people's backend API server
+  hosts: api
+  sudo: True
+  vars:
+    pipeline_phase: "integ"
+    component: "people_api"
+    sumologic_logs: "{{ sumologic_logs_defaults_backend_redis }}"
+    people_api_datadog_event_deployment_priority: "low"
+    datadog_process_checks:
+      - "{{ datadog_process_checks_global_defaults }}"
+    datadog_event_deployment_priority: "normal" 
+
+  tasks:
+    - include_vars: group_vars/main.yml
+    
+    - name: create required directories
+      file: >
+        state=directory
+        path={{ people_api_application_core_service_home }}
+        owner={{ jive_user }}
+        group={{ jive_group }}
+        mode=0755
+    
+
+    - name: copy upstart init scripts
+      template: >
+        src=templates/upstart-init.conf.j2
+        dest=/etc/init/{{ item.artifact_id }}.conf
+        owner=root
+        group=root
+        mode=755
+      with_items:
+        - { artifact_id: "{{ people_api_application_core_service_artifact_id }}",
+            home: "{{ people_api_application_core_service_home }}",
+            artifact: "{{ people_api_application_core_service_artifact }}",
+            port: "{{ people_api_application_core_service_manage_port }}",
+            startup_timeout: "{{ people_api_application_core_service_startup_timeout }}" }
+
+
+    - name: fetch artifact from nexus
+      get_url: >
+        url={{ people_api_artifact_url }}
+        dest={{ jive_incoming_folder }}/{{ people_api_artifact_name }}
+        mode=0755
+
+    
+    - name: "deploy application-core"
+      command: mv {{ jive_incoming_folder }}/{{ people_api_artifact_name }} {{ people_api_application_core_service_artifact }}
+
+    - name: Start people_api {{ people_api_appcore_artifact_id }}
+      service: >
+        name="{{ people_api_appcore_artifact_id }}"
+        state=restarted

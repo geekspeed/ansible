@@ -1,0 +1,93 @@
+---
+- name: Deploying daily backend API server
+  hosts: api
+  sudo: True
+  vars:
+    pipeline_phase: "integ"
+    component: "daily_backend_api"
+    sumologic_logs: "{{ sumologic_logs_defaults_backend_redis }}"
+    people_api_datadog_event_deployment_priority: "low"
+    datadog_process_checks:
+      - "{{ datadog_process_checks_global_defaults }}"
+    datadog_event_deployment_priority: "normal" 
+
+  tasks:
+    - include_vars: group_vars/main.yml
+    
+    - name: create required directories
+      file: >
+        state=directory
+        path={{ application_core_service_home }}
+        owner={{ jive_user }}
+        group={{ jive_group }}
+        mode=0755
+    
+
+    - name: copy upstart init scripts
+      template: >
+        src=templates/upstart-init.conf.j2
+        dest=/etc/init/{{ item.artifact_id }}.conf
+        owner=root
+        group=root
+        mode=755
+      with_items:
+        - { artifact_id: "{{ application_core_service_artifact_id }}",
+            home: "{{ application_core_service_home }}",
+            artifact: "{{ application_core_service_artifact }}",
+            port: "{{ application_core_service_manage_port }}",
+            startup_timeout: "{{ application_core_service_startup_timeout }}" }
+
+
+    - name: fetch artifact from nexus
+      get_url: >
+       url={{ artifact_url }}
+       dest={{ global_jive_incoming_folder }}/{{ artifact_name }}
+       mode=0755
+    
+    - name: "deploy application-core"
+      command: mv {{ jive_incoming_folder }}/{{ artifact_name }} {{ application_core_service_artifact }}
+
+    - name: gather ec2 facts for elb disable/re-enable
+      ec2_facts:
+
+    - name: remove {{ backend_api_elb_appcore }} from instance
+      sudo: false
+      local_action: ec2_elb
+      args:
+        instance_id: "{{ ansible_ec2_instance_id }}"
+        state: 'absent'
+        wait: yes
+        wait_timeout: 60
+        ec2_elbs: ["{{ backend_api_elb_appcore }}"]
+
+    - name: Stop backend_api {{ application_core_service_artifact_id }}
+      service: >
+        name="{{ application_core_service_artifact_id }}"
+        state=stopped
+
+    - name: Start backend_api {{ application_core_service_artifact_id }}
+      service: >
+        name="{{ application_core_service_artifact_id }}"
+        state=started
+
+    - name: Verify backend_api {{ application_core_service_artifact_id }} health check endpoint
+      uri: >
+        url="http://localhost:{{ application_core_service_manage_port }}/manage/health"
+        status_code=200
+      tags:
+        - service_check
+
+    - name: add back the instance to {{ backend_api_elb_appcore }}
+      sudo: false
+      local_action: ec2_elb
+      args:
+        instance_id: "{{ ansible_ec2_instance_id }}"
+        ec2_elbs: ["{{ backend_api_elb_appcore }}"]
+        state: 'present'
+        wait: yes
+        wait_timeout: 60
+   
+    - name: Start Daily_api {{ appcore_artifact_id }}
+      service: >
+        name="{{ appcore_artifact_id }}"
+        state=restarted

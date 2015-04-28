@@ -1,0 +1,113 @@
+---
+- name: Preconfiguring people's backend OS server
+  hosts: api
+  sudo: True
+  
+  tasks:
+    - include_vars: group_vars/main.yml
+
+    - name: gather ec2 facts for elb disable/re-enable
+      ec2_facts:
+
+    - name: updating /etc/hosts for nexus
+      template: >
+        src=templates/hosts.j2
+        dest=/etc/hosts
+
+    - name: Create jive group
+      group: "name=jive state=present"
+    
+    - name: Create jive user
+      user: "name=jive group=jive"
+   
+    - name: create jive folder
+      file: "state=directory path={{ item }} owner={{ jive_user }} group={{ jive_group }} mode=0755"
+      with_items:
+        - "{{ jive_folder }}"
+ 
+    - name: create ebs for /usr/local/jive
+      local_action:
+        module: ec2_vol
+        instance: i-0c1dfdfb
+        volume_size: 30
+        device_name: xvdd
+      sudo: false
+
+    - name: create jive directory filesytem 
+      filesystem: >
+        fstype=ext4
+        dev=/dev/xvdd 
+
+    - name: mount jive directory
+      mount:
+        name: "{{ jive_folder }}"
+        src: /dev/xvdd
+        fstype: ext4
+        state: mounted
+
+    - name: create jive sub directories
+      file: "state=directory path={{ item }} owner={{ jive_user }} group={{ jive_group }} mode=0755"
+      with_items:
+      - "{{ jive_servers_folder }}"
+      - "{{ jive_incoming_folder }}"
+      - "{{ jive_archive_folder }}"
+      - "{{ jive_bin_folder }}"
+      - "{{ jive_log_folder }}"
+
+    - name: copy upstart cleanup script
+      template: src=templates/upstart_cleanup.sh.j2 dest={{ jive_bin_folder }}/upstart_cleanup.sh owner={{ jive_user }} group={{ jive_group }} mode=755
+
+    - name: configure /etc/security/limits.conf with high max file descriptors (soft/hard)
+      template: src=templates/limits.conf dest=/etc/security/limits.conf mode=0644
+    - name: configure /etc/pam.d/common-session and /etc/pam.d/common-session-noninteractive with pam_limits.so
+      lineinfile: name={{ item }} regexp='pam_limits.so' line='session required pam_limits.so'
+      with_items:
+        - /etc/pam.d/common-session
+        - /etc/pam.d/common-session-noninteractive
+
+    - name: install commonly used packages via apt
+      apt: pkg={{ item }} update_cache=yes cache_valid_time=3600
+
+      with_items:
+         - curl
+         - python-pip
+         - python-mysqldb
+         - python-httplib2
+         - ntp
+
+    - name: install python modules
+      pip: name={{ item }}
+      with_items:
+         - sarge
+         - tornado
+         - consulate
+
+    - name: add repo for java 8
+      apt_repository: repo='ppa:webupd8team/java' state=present
+
+    - name: set licence selected
+      shell: /bin/echo debconf shared/accepted-oracle-license-v1-1 select true | /usr/bin/debconf-set-selections
+      sudo: yes
+
+    - name: set licence seen
+      shell: /bin/echo debconf shared/accepted-oracle-license-v1-1 seen true | /usr/bin/debconf-set-selections
+      sudo: yes
+
+    - name: install java 8
+      apt: name=oracle-java8-installer state=latest update-cache=yes force=yes
+      sudo: yes
+    
+    - name: write sysctl config file to /etc/sysctl.d/60-hadoop.conf
+      template: src=templates/sysctl.conf dest=/etc/sysctl.d/60-hadoop.conf owner=root group=root mode=0644
+    
+    - name: restart procps
+      service: name=procps state=restarted
+ 
+    - name: configure rsyslog with the imfile module
+      template: src=templates/rsyslog.conf dest=/etc/rsyslog.d/30-imfile.conf owner=root group=root mode=0644
+      
+    - name : restarting syslog after configuration update
+      service: name=rsyslog state=restarted
+
+    - name: Configure /etc/ntp.conf
+      template: src=templates/ntp.conf.j2 dest=/etc/ntp.conf owner=root group=root mode=0640

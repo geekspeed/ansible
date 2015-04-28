@@ -1,0 +1,64 @@
+---
+- name: Deploying people's liquibase server 
+  hosts: api
+  sudo: True
+
+
+  tasks:
+    - include_vars: group_vars/main.yml
+
+    - name: create liquibase directory
+      file: >
+        state=directory
+        path={{ people_db_liquibase_home }}
+        owner=root
+        group=root
+        mode=0750
+
+    - name: fetch liquibase
+      get_url: >
+        url={{ people_db_liquibase_url }}
+        dest={{ people_db_liquibase_download_path }}/{{ people_db_liquibase_artifact }}
+        mode=0750
+
+    - name: copy and unpack liquibase
+      unarchive: >
+        src={{ people_db_liquibase_download_path }}/{{ people_db_liquibase_artifact }}
+        dest={{ people_db_liquibase_home }}
+        copy=no
+        creates={{ people_db_liquibase_home }}/liquibase.jar
+
+    - name: fetch mysql connector
+      get_url: >
+        url={{ people_db_liquibase_mysql_connector_url }}
+        dest={{ people_db_liquibase_download_path }}/{{ people_db_liquibase_mysql_connector_artifact }}
+        mode=0755
+        owner=root
+        group=root
+
+    - name: copy and unpack mysql connector
+      unarchive: >
+        src={{ people_db_liquibase_download_path }}/{{ people_db_liquibase_mysql_connector_artifact }}
+        dest={{ people_db_liquibase_lib }}
+        copy=no
+        creates={{ people_db_liquibase_mysql_connector_home }}/{{ people_db_liquibase_mysql_connector_jar }}
+
+    - name: make liquibase executable
+      file: >
+        path={{ people_db_liquibase_executable }}
+        mode=0755
+        owner=root
+        group=root
+
+    - name: copy global properties file
+      template: >
+        src=templates/config.properties.j2
+        dest={{ people_api_application_core_service_home }}/config.properties
+        owner={{ global_jive_user }}
+        group={{ global_jive_group }}
+        mode=0640
+
+    - name: Verify backend_api {{ people_api_application_core_service_artifact_id }} health check endpoint
+      uri: >
+       url="http://localhost:{{ people_api_application_core_service_manage_port }}/manage/health"
+       status_code=200

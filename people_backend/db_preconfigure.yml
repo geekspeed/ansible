@@ -1,0 +1,123 @@
+---
+- name: Deploying people's DB server
+  hosts: api
+  sudo: True
+
+
+  tasks:
+    - include_vars: group_vars/main.yml
+    - name: copy data properties file
+      template: >
+        src=templates/liquibase_data.properties.j2
+        dest={{ people_db_data_properties_file }}
+        owner=root
+        group=root
+        mode=0640
+
+    - name: copy global properties file
+      template: >
+        src=templates/liquibase_global.properties.j2
+        dest={{ people_db_global_properties_file }}
+        owner=root
+        group=root
+        mode=0640
+
+    - name: create user serviceshared in data db
+      mysql_user: >
+        name={{ backend_db_data_serviceshared }}
+        password={{ vaulted_people_db_data_serviceshared_password }}
+        host='%'
+        login_host={{ people_db_data_endpoint }}
+        priv="{{ people_db_data_name }}.*:ALL/mysql.proc:SELECT"
+        login_user={{ people_db_data_master_user }}
+        login_password={{ vaulted_backend_db_data_master_password }}
+        state=present
+
+    - name: create user jivedeveloper in data db
+      mysql_user: >
+        name={{ people_db_data_jivedeveloper }}
+        password={{ vaulted_people_db_data_jivedeveloper_password }}
+        host='%'
+        login_host={{ people_db_data_endpoint }}
+        priv="{{ people_db_data_name }}.*:SELECT"
+        login_user={{ people_db_data_master_user }}
+        login_password={{ vaulted_people_db_data_master_password }}
+        state=present
+
+    - name: create user jiveadmin in data db
+      mysql_user: >
+        name={{ people_db_data_jiveadmin }}
+        password={{ vaulted_people_db_data_jiveadmin_password }}
+        host='%'
+        login_host={{ people_db_data_endpoint }}
+        priv="{{ people_db_data_name }}.*:ALL"
+        login_user={{ people_db_data_master_user }}
+        login_password={{ vaulted_people_db_data_master_password }}
+        state=present
+
+    - name: create user serviceappcore in global db
+      mysql_user: >
+        name=serviceappcore
+        password={{ vaulted_people_db_global_serviceappcore_password }}
+        host='%'
+        login_host={{ people_db_global_endpoint }}
+        priv="{{ people_db_global_name }}.*:ALL/mysql.proc:SELECT"
+        login_user={{ people_db_global_master_user }}
+        login_password={{ vaulted_people_db_global_master_password }}
+        state=present
+
+    - name: create user serviceidsync in global db
+      mysql_user: >
+        name=serviceidsync
+        password={{ vaulted_people_db_global_serviceidsync_password }}
+        host='%'
+        login_host={{ people_db_global_endpoint }}
+        priv="{{ people_db_global_name }}.*:ALL/mysql.proc:SELECT"
+        login_user={{ people_db_global_master_user }}
+        login_password={{ vaulted_people_db_global_master_password }}
+        state=present
+
+    - name: create user servicebackend in global db
+      mysql_user: >
+        name={{ people_db_global_servicebackend }}
+        password={{ vaulted_people_db_global_servicebackend_password }}
+        host='%'
+        login_host={{ people_db_global_endpoint }}
+        priv="{{ people_db_global_name }}.*:ALL/mysql.proc:SELECT"
+        login_user={{ people_db_global_master_user }}
+        login_password={{ vaulted_people_db_global_master_password }}
+        state=present
+
+    - name: create user serviceconfig in global db
+      mysql_user: >
+        name={{ people_db_global_serviceconfig }}
+        password={{ vaulted_people_db_global_serviceconfig_password }}
+        host='%'
+        login_host={{ people_db_global_endpoint }}
+        priv="{{ people_db_global_name }}.*:ALL/mysql.proc:SELECT"
+        login_user={{ people_db_global_master_user }}
+        login_password={{ vaulted_people_db_global_master_password }}
+        state=present
+
+    - name: create user jiveadmin in global db
+      mysql_user: >
+        name={{ people_db_global_jiveadmin }}
+        password={{ vaulted_people_db_global_jiveadmin_password }}
+        host='%'
+        login_host={{ people_db_global_endpoint }}
+        priv="{{ people_db_global_name }}.*:ALL"
+        login_user={{ people_db_global_master_user }}
+        login_password={{ vaulted_people_db_global_master_password }}
+        state=present
+
+    - name: create user jivedeveloper in global db
+      mysql_user: >
+        name={{ people_db_global_jivedeveloper }}
+        password={{ vaulted_people_db_global_jivedeveloper_password }}
+        host='%'
+        login_host={{ people_db_global_endpoint }}
+        priv="{{ people_db_global_name }}.*:SELECT"
+        login_user={{ people_db_global_master_user }}
+        login_password={{ vaulted_people_db_global_master_password }}
+        state=present
+
